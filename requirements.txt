@@ -1,3 +1,5 @@
 pycryptodome
 requests
 click
+pydub
+datetime

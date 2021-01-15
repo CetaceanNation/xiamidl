@@ -2,6 +2,7 @@ import re
 import time
 import json
 import requests
+from datetime import datetime
 from hashlib import md5
 from misc import *
 from downloader import Downloader
@@ -85,9 +86,10 @@ class xiami():
         print('Getting album "%s"' % (album_detail['albumName']))
         for song in album_detail['songs']:
             is_multi_disc = int(album_detail['cdCount']) > 1
-            self.getSong(song['songId'], album_detail['artistName'], is_multi_disc)
+            album_date = datetime.utcfromtimestamp(int(album_detail['gmtPublish']) / 1000).strftime('%Y-%m-%d')
+            self.getSong(song['songId'], album_detail['artistName'], is_multi_disc, album_date)
     
-    def getSong(self, song_id, album_artist, is_multi_disc):
+    def getSong(self, song_id, album_artist, is_multi_disc, album_date):
         cfg = self.config.copy()
         song_url = self.base_url.format(action=self.actions['getsongdetail'])
         params = {'songId': song_id}
@@ -113,7 +115,9 @@ class xiami():
             'album_cover_url': song_detail.get('albumLogo', None),
             'album': filterBadCharacter(song_detail.get('albumName', 'Non-album Track')),
             'album_artist': album_artist,
+            'album_date': album_date,
             'disc_number': song_detail.get('cdSerial', 1),
+            'is_multi_disc': is_multi_disc,
             'track_number': song_detail.get('track', 0),
             'track_name': filterBadCharacter(song_detail.get('songName', 'No Title')).split('–')[0].strip(),
             'savedir': cfg['savedir'],
@@ -122,10 +126,10 @@ class xiami():
             'ext': ext,
         }
         if not songinfo['album']: songinfo['album'] = 'Non-Album Tracks'
-        self.download(songinfo, is_multi_disc)
+        self.download(songinfo)
 
-    def download(self, songinfo, is_multi_disc):
-        task = Downloader(songinfo, is_multi_disc, self.session)
+    def download(self, songinfo):
+        task = Downloader(songinfo, self.config, self.session)
         if task.start():
             self.logger_handle.info('Downloaded track "%s" successfully.' % (songinfo['track_name']))
         else:

@@ -1,5 +1,8 @@
 {
 	"savedir": "downloaded",
-    "logfilepath": "xiamidl.log",
+	"logfilepath": "xiamidl.log",
+	"wav2flac": true,
+	"embedtagsinflac": true,
+	"coverartname": "cover",
 	"proxies": {}
 }

@@ -4,3 +4,10 @@ Based on [musicdl](https://github.com/CharlesPikachu/musicdl) by [Charles](https
 
 You should almost certainly specify proxies in [config.json](./config.json) if you're based in North America, as they block loads of stuff there.
 
+# Running
+
+```sh
+pip3 install -r requirements.txt
+python3 xiamidl.py
+```
+
