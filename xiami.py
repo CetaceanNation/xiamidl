@@ -57,7 +57,6 @@ class xiami():
             selections[str(selectionNum)] = album_result['albumId']
             print('%d) %s' % (selectionNum + 1, album_result['albumName']))
             selectionNum+=1
-        album_option = dealInput('Option #: ')
         while True:
             album_option = dealInput('Option #: ')
             if not int(album_option) - 1 > SEARCH_RESULTS and not int(album_option) - 1 < 0:
