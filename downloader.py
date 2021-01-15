@@ -15,8 +15,8 @@ class Downloader():
 
     def start(self):
         songinfo, session, headers = self.songinfo, self.session, self.headers
-        if not os.path.isdir(os.path.join(songinfo['savedir'], songinfo['artist'], songinfo['album'])):
-            os.makedirs(os.path.join(songinfo['savedir'], songinfo['artist'], songinfo['album']))
+        if not os.path.isdir(os.path.join(songinfo['savedir'], songinfo['album_artist'], songinfo['album'])):
+            os.makedirs(os.path.join(songinfo['savedir'], songinfo['album_artist'], songinfo['album']))
         checkDir(songinfo['savedir'])
         album_dir = os.path.join(songinfo['savedir'], songinfo['album_artist'], songinfo['album'])
         if not os.path.isfile(os.path.join(album_dir, self.config['coverartname'] + '.jpg')) and songinfo['album_cover_url'] != None:
@@ -43,7 +43,7 @@ class Downloader():
                 with session.get(songinfo['download_url'], headers=headers, stream=True, verify=False) as response:
                     if response.status_code == 200:
                         total_size, chunk_size = int(response.headers['content-length']), 1024
-                        label = '%s. %s [%0.2fMB]' % (songinfo['track_number'], songinfo['track_name'], total_size / 1024 / 1024)
+                        label = '%s. %s.%s [%0.2fMB]' % (songinfo['track_number'], songinfo['track_name'], songinfo['ext'], total_size / 1024 / 1024)
                         with click.progressbar(length=total_size, label=label) as progressbar:
                             with open(os.path.join(disc_dir, track_file_name + '.' + songinfo['ext']), 'wb') as fp:
                                 for chunk in response.iter_content(chunk_size=chunk_size):
@@ -51,17 +51,20 @@ class Downloader():
                                         fp.write(chunk)
                                         progressbar.update(len(chunk))
                         if songinfo['ext'] == 'wav' and self.config['wav2flac']:
-                            self.compress_wav(os.path.join(disc_dir, track_file_name), self.config['embedtagsinflac'], songinfo)
+                            self.compress_wav(os.path.join(disc_dir, track_file_name), self.config['embedtags'], songinfo)
+                        elif self.config['embedtags']:
+                            self.tag_file(os.path.join(disc_dir, track_file_name + '.' + songinfo['ext']), songinfo['ext'], songinfo)
                         is_success = True
             else:
                 print('Track already downloaded, skipping...')
                 is_success = True
-        except:
+        except Exception as e:
+            print(e)
             is_success = False
         return is_success
 
     def compress_wav(self, wavpath, add_tags, songinfo):
-        track = AudioSegment.from_file(wavpath + '.wav', format='wav')
+        track = AudioSegment.from_file(wavpath + '.wav', format = 'wav')
         if add_tags:
             print('Compressing to flac with tags...')
             tagset = {'albumartist': songinfo['album_artist'],
@@ -77,5 +80,21 @@ class Downloader():
             tagset = {}
         track.export(wavpath + '.flac', format = 'flac',
             parameters = ['-compression_level', '8'],
-            tags = tagset)
+            tags = tagset,
+            id3v2_version = "3")
         os.remove(wavpath + '.wav')
+
+    def tag_file(self, filepath, formatext, songinfo):
+        print('Adding tags...')
+        if formatext == 'm4a':
+            formatext = 'mp4'
+        track = AudioSegment.from_file(filepath, format = formatext)
+        tagset = {'albumartist': songinfo['album_artist'],
+                  'album': songinfo['album'],
+                  'artist': songinfo['artist'],
+                  'title': songinfo['track_name'],
+                  'discnumber': songinfo['disc_number'],
+                  'tracknumber': songinfo['track_number'],
+                  'date': songinfo['album_date'],
+                  }
+        track.export(filepath, format=formatext, tags = tagset)
