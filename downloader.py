@@ -27,6 +27,8 @@ class Downloader():
                             cfp.write(chunk)
         if songinfo['is_multi_disc']:
             disc_dir = os.path.join(album_dir, 'Disc ' + songinfo['disc_number'])
+            if not os.path.isdir(disc_dir):
+                os.mkdir(disc_dir)
         else:
             disc_dir = album_dir
         track_file_name = songinfo['track_number'] + '. ' + songinfo['artist'] + ' - ' + songinfo['track_name']
