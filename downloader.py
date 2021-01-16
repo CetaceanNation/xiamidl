@@ -53,9 +53,9 @@ class Downloader():
                                         fp.write(chunk)
                                         progressbar.update(len(chunk))
                         if songinfo['ext'] == 'wav' and self.config['wav2flac']:
-                            self.compress_wav(os.path.join(disc_dir, track_file_name), self.config['embedtags'], songinfo)
-                        elif self.config['embedtags']:
-                            self.tag_file(os.path.join(disc_dir, track_file_name + '.' + songinfo['ext']), songinfo['ext'], songinfo)
+                            self.compress_wav(os.path.join(disc_dir, track_file_name), songinfo)
+                        if self.config['embedtags']:
+                            self.tag_file(track_final_path, songinfo['ext'], songinfo)
                         is_success = True
             else:
                 print('Track already downloaded, skipping...')
@@ -65,25 +65,10 @@ class Downloader():
             is_success = False
         return is_success
 
-    def compress_wav(self, wavpath, add_tags, songinfo):
+    def compress_wav(self, wavpath, songinfo):
         track = AudioSegment.from_file(wavpath + '.wav', format = 'wav')
-        if add_tags:
-            print('Compressing to flac with tags...')
-            tagset = {'albumartist': songinfo['album_artist'],
-                      'album': songinfo['album'],
-                      'artist': songinfo['artist'],
-                      'title': songinfo['track_name'],
-                      'discnumber': songinfo['disc_number'],
-                      'tracknumber': songinfo['track_number'],
-                      'date': songinfo['album_date'],
-                      }
-        else:
-            print('Compressing to flac...')
-            tagset = {}
-        track.export(wavpath + '.flac', format = 'flac',
-            parameters = ['-compression_level', '8'],
-            tags = tagset,
-            id3v2_version = "3")
+        print('Compressing to flac...')
+        track.export(wavpath + '.flac', format = 'flac', parameters = ['-compression_level', '8'])
         os.remove(wavpath + '.wav')
 
     def tag_file(self, filepath, formatext, songinfo):
@@ -98,5 +83,5 @@ class Downloader():
                   'discnumber': songinfo['disc_number'],
                   'tracknumber': songinfo['track_number'],
                   'date': songinfo['album_date'],
-                  }
-        track.export(filepath, format=formatext, tags = tagset)
+                  'releasetype': songinfo['release_type'],}
+        track.export(filepath, format=formatext, tags = tagset, id3v2_version = "3")

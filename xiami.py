@@ -9,6 +9,11 @@ from downloader import Downloader
 
 ALBUM_PAGE_RESULTS = 30
 SEARCH_RESULTS = 8
+RELEASE_TYPE = {
+    'EP、单曲': 'ep,single',
+    '精选集': 'compilation',
+    '录音室专辑': 'album'
+}
 
 class xiami():
     def __init__(self, config, logger_handle, **kwargs):
@@ -82,9 +87,9 @@ class xiami():
         for song in album_detail['songs']:
             is_multi_disc = int(album_detail['cdCount']) > 1
             album_date = datetime.utcfromtimestamp(int(album_detail['gmtPublish']) / 1000).strftime('%Y-%m-%d')
-            self.getSong(song['songId'], album_detail['artistName'], is_multi_disc, album_date)
+            self.getSong(song['songId'], album_detail['artistName'], is_multi_disc, RELEASE_TYPE[album_detail['albumCategory']], album_date)
     
-    def getSong(self, song_id, album_artist, is_multi_disc, album_date):
+    def getSong(self, song_id, album_artist, is_multi_disc, release_type, album_date):
         cfg = self.config.copy()
         song_url = self.base_url.format(action=self.actions['getsongdetail'])
         params = {'songId': song_id}
@@ -115,6 +120,7 @@ class xiami():
             'is_multi_disc': is_multi_disc,
             'track_number': song_detail.get('track', 0),
             'track_name': filterBadCharacter(song_detail.get('songName', 'No Title')).split('–')[0].strip(),
+            'release_type': release_type,
             'savedir': cfg['savedir'],
             'download_url': download_url,
             'lyrics': lyrics,
