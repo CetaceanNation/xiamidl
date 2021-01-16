@@ -54,6 +54,7 @@ class Downloader():
                                         progressbar.update(len(chunk))
                         if songinfo['ext'] == 'wav' and self.config['wav2flac']:
                             self.compress_wav(os.path.join(disc_dir, track_file_name), songinfo)
+                            songinfo['ext'] = 'flac'
                         if self.config['embedtags']:
                             self.tag_file(track_final_path, songinfo['ext'], songinfo)
                         is_success = True
@@ -84,4 +85,7 @@ class Downloader():
                   'tracknumber': songinfo['track_number'],
                   'date': songinfo['album_date'],
                   'releasetype': songinfo['release_type'],}
-        track.export(filepath, format=formatext, tags = tagset, id3v2_version = "3")
+        if formatext != 'wav':
+            track.export(filepath, format=formatext, tags = tagset, id3v2_version = "3")
+        else:
+            track.export(filepath, format=formatext, tags = tagset)
