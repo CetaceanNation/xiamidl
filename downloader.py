@@ -45,7 +45,7 @@ class Downloader():
                 with session.get(songinfo['download_url'], headers=headers, stream=True, verify=False) as response:
                     if response.status_code == 200:
                         total_size, chunk_size = int(response.headers['content-length']), 1024
-                        label = '%s. %s.%s [%0.2fMB]' % (songinfo['track_number'], songinfo['track_name'], songinfo['ext'], total_size / 1024 / 1024)
+                        label = '%s. %s - %s.%s [%0.2fMB]' % (songinfo['track_number'], songinfo['artist'], songinfo['track_name'], songinfo['ext'], total_size / 1024 / 1024)
                         with click.progressbar(length=total_size, label=label) as progressbar:
                             with open(os.path.join(disc_dir, track_file_name + '.' + songinfo['ext']), 'wb') as fp:
                                 for chunk in response.iter_content(chunk_size=chunk_size):

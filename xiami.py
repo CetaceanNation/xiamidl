@@ -8,7 +8,7 @@ from misc import *
 from downloader import Downloader
 
 ALBUM_PAGE_RESULTS = 30
-SEARCH_RESULTS = 5
+SEARCH_RESULTS = 8
 
 class xiami():
     def __init__(self, config, logger_handle, **kwargs):
@@ -24,20 +24,20 @@ class xiami():
         params = {'key': artist_query, 'pagingVO': {'page': str(1), 'pageSize': SEARCH_RESULTS}}
         response = self.session.get(search_url, headers=self.headers, params=self.__xiamiSign(params, self.__getToken()))
         artist_list = response.json()['data']['data']['artists']
-        for artist_result in artist_list:
-            if artist_query == artist_result['artistName']:
-                self.getArtist(artist_result['artistId'])
-                return
-        print('Could not find exact match for "%s", did you mean:' % (artist_query))
+        print('Search results for "%s":' % (artist_query))
         selectionNum = 0
         selections = {}
         for artist_result in artist_list:
             selections[str(selectionNum)] = artist_result['artistId']
-            print('%d) %s' % (selectionNum + 1, artist_result['artistName']))
+            if artist_result['alias'] != '':
+                artist_string = '%s (%s)' % (artist_result['artistName'], artist_result['alias'])
+            else:
+                artist_string = artist_result['artistName']
+            print('%d) %s' % (selectionNum + 1, artist_string))
             selectionNum+=1
         while True:
             artist_option = dealInput('Option #: ')
-            if not int(artist_option) - 1 > SEARCH_RESULTS and not int(artist_option) - 1 < 0:
+            if not int(artist_option) - 1 > len(artist_list) and not int(artist_option) - 1 < 0:
                 self.getArtist(selections[str(int(artist_option) - 1)])
                 return
 
@@ -46,20 +46,16 @@ class xiami():
         params = {'key': album_query, 'pagingVO': {'page': str(1), 'pageSize': SEARCH_RESULTS}}
         response = self.session.get(search_url, headers=self.headers, params=self.__xiamiSign(params, self.__getToken()))
         album_list = response.json()['data']['data']['albums']
-        for album_result in album_list:
-            if album_query == album_result['albumName']:
-                self.getAlbum(album_result['albumId'])
-                return
-        print('Could not find exact match for "%s", did you mean:' % (album_query))
+        print('Search results for "%s":' % (album_query))
         selectionNum = 0
         selections = {}
         for album_result in album_list:
             selections[str(selectionNum)] = album_result['albumId']
-            print('%d) %s' % (selectionNum + 1, album_result['albumName']))
+            print('%d) %s - %s [%s tracks]' % (selectionNum + 1, album_result['artistName'], album_result['albumName'], album_result['songCount']))
             selectionNum+=1
         while True:
             album_option = dealInput('Option #: ')
-            if not int(album_option) - 1 > SEARCH_RESULTS and not int(album_option) - 1 < 0:
+            if not int(album_option) - 1 > len(album_list) and not int(album_option) - 1 < 0:
                 self.getAlbum(selections[str(int(album_option) - 1)])
                 return
 
@@ -110,10 +106,10 @@ class xiami():
             lyrics = response.text
         songinfo = {
             'songid': str(song_detail['songId']),
-            'artist': filterBadCharacter(song_detail.get('artistName', 'Unknown Artist')),
+            'artist': filterBadCharacter(song_detail['artistName']),
             'album_cover_url': song_detail.get('albumLogo', None),
             'album': filterBadCharacter(song_detail.get('albumName', 'Non-album Track')),
-            'album_artist': album_artist,
+            'album_artist': filterBadCharacter(album_artist),
             'album_date': album_date,
             'disc_number': song_detail.get('cdSerial', 1),
             'is_multi_disc': is_multi_disc,
@@ -130,9 +126,9 @@ class xiami():
     def download(self, songinfo):
         task = Downloader(songinfo, self.config, self.session)
         if task.start():
-            self.logger_handle.info('Downloaded track "%s" successfully.' % (songinfo['track_name']))
+            self.logger_handle.info('Downloaded track "%s. %s - %s" successfully.' % (songinfo['track_number'], songinfo['artist'], songinfo['track_name']))
         else:
-            self.logger_handle.info('Failed to download track "%s".' % (songinfo['track_name']))
+            self.logger_handle.info('Failed to download track "%s. %s - %s".' % (songinfo['track_number'], songinfo['artist'], songinfo['track_name']))
 
     def __xiamiSign(self, params, token=''):
         appkey = '23649156'
