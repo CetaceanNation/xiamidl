@@ -12,7 +12,10 @@ SEARCH_RESULTS = 8
 RELEASE_TYPE = {
     'EP、单曲': 'ep,single',
     '精选集': 'compilation',
-    '录音室专辑': 'album'
+    '录音室专辑': 'album',
+    '原声带、影视音乐': 'soundtrack',
+    '合集、杂锦': 'other',
+    '现场专辑': 'album,live',
 }
 
 class xiami():
